@@ -1,0 +1,81 @@
+---
+title: "CREC Summary"
+date: "May 2023"
+author: "Tanner Delpier, PhD"
+format: pdf
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+
+
+library(tidyverse)
+library(TannersTools)
+library(lubridate)
+library(scales)
+library(directlabels)
+library(fredr)
+library(ggtext)
+library(ggalt)
+
+mea_red <- "#C10230" 
+mea_blue <- "#003057"
+mea_green <- "#00A651"
+line_width <- 1
+
+
+```
+
+```{r}
+
+tt_dir_rd()
+
+crec <- read_csv("CREC/CREC_Data.csv") %>% 
+  mutate(crec.date = mdy(crec.date),
+         crec.year = year(crec.date),
+         crec.month = month(crec.date),
+         est.year = crec.year + est.time,
+         latest.crec = ifelse(crec.date == max(crec.date), 1, 0))
+
+
+```
+
+You can add options to executable code like this
+
+```{r}
+
+
+crec %>% 
+  ggplot(aes(x = est.year, y = net.rev))+
+  geom_line(data = crec %>% filter(latest.crec == 1, fund == "SAF"), color = mea_green, lwd = line_width, lty  = 2)+
+  geom_line(data = crec %>% filter(est.time == -1, fund == "SAF"), color = mea_green, lwd = line_width)+
+  geom_line(data = crec %>% filter(latest.crec == 1, fund == "GF"), color = mea_blue, lwd = line_width, lty  = 2)+
+  geom_line(data = crec %>% filter(est.time == -1, fund == "GF"), color = mea_blue, lwd = line_width)+
+  geom_dl(data = crec %>% filter(est.time == 2, fund == "GF"), 
+          aes(label = "General Fund Net Revenue Estimate"), method = "smart.grid")+
+
+  geom_vline(aes(xintercept = (max(crec$crec.year) - 1)))+
+  # geom_text(aes(x = (max(crec$crec.year) - 0.6), y = 17000, label = "Forecast"))+
+  annotate("text", x = (max(crec$crec.year) - 0.6), y = 17000, label = "Forecast")+
+  # geom_point(aes(x = max(crec$est.year), y = 16000))+
+  scale_y_continuous(labels = comma_format())+
+  scale_x_continuous(labels = number_format(accuracy = 1, big.mark = ""), 
+                     n.breaks = (max(crec$est.year) - min(crec$est.year)))+
+  theme_classic()+
+  labs(title = "General Fund and School Aid Fund Net Revenue",
+       subtitle = "Millions of dollars, nominal",
+       y = "",
+       x = "")
+
+
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
